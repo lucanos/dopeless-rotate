@@ -1,6 +1,6 @@
 /*!
  * Dopeless Rotate - jQuery Plugin
- * version: 1.2.2 (23/05/2013)
+ * version: 1.2.3 (23/05/2013)
  *
  * Documentation and license http://www.dopeless-design.de/dopeless-rotate-jquery-plugin-for-360-degree-product-view.html
  *
@@ -32,7 +32,8 @@ $.fn.tsRotate = function( options ) {
         'rotateloop' : true,
         'autorotatespeed' : 100,
         'rotatehover' : false,
-        'speedmultiplyer' : 1
+        'speedmultiplyer' : 1,
+        'wheelRotate' : false
     }, options);
     var zoomDiv = (settings.zoom) ? '<div class="zoom"></div>' : '';
     var pointerDiv = (settings.changeAxis) ? '' : '<div class="round"><div class="pointer_object"></div><div class="pointer"></div></div>';
@@ -57,6 +58,7 @@ $.fn.tsRotate = function( options ) {
     }
     var autorotatespeed = settings.autorotatespeed;
     var speedMult = settings.speedmultiplyer;
+    var wheelRotate = settings.wheelRotate;
     if(speedMult != 1){
         speedMult = speedMult/10 + 1;
     }
@@ -866,6 +868,23 @@ $.fn.tsRotate = function( options ) {
             rotateImg(enterPosition);
         }
     });
+    
+    if(wheelRotate){
+        holder.on('mousewheel',function(e){
+            if(!zoomon){
+                e.preventDefault();
+                if(playing){
+                    stopautorotate();
+                }
+                if(e.originalEvent.wheelDelta /120 > 0) {
+                    nextFrame();
+                }
+                else{
+                    prevFrame();
+                }
+            }
+        })
+    }
     
     if(rotatehover){
         holder.on('mouseenter.initrotate', function(e){
