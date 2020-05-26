@@ -184,7 +184,7 @@
 	cursor:pointer;
 	-webkit-box-shadow:  0px 0px 5px 0px rgba(0, 0, 0, 0.3);
 	box-shadow:  0px 0px 5px 0px rgba(0, 0, 0, 0.3);
-	z-index:100;
+	z-index:1000;
 }
 
 .hotspot.expanded{
@@ -213,6 +213,12 @@
 	color:#555;
 }
 
+.hltext.link{
+	color:#555;
+}
+.hltext.link:hover{
+	color:#000;
+}
 .hotspot.posr{
 	background-position:100% 0;
 }

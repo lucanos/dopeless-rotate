@@ -1,8 +1,8 @@
 /*!
  * Dopeless Rotate - jQuery Plugin
- * version: 1.2.4 (28/05/2013)
+ * version: 1.2.5 (24/07/2013)
  *
- * Documentation and license http://www.dopeless-design.de/dopeless-rotate-jquery-plugin-for-360-degree-product-view.html
+ * Documentation and license http://www.dopeless-design.de/
  *
  * (c) 2013 Dopeless Design (Rostyslav Chernyakhovskyy) - mail@dopeless-design.de
  */
@@ -38,7 +38,7 @@ $.fn.tsRotate = function( options ) {
     var zoomDiv = (settings.zoom) ? '<div class="zoom"></div>' : '';
     var pointerDiv = (settings.changeAxis) ? '' : '<div class="round"><div class="pointer_object"></div><div class="pointer"></div></div>';
     var direction = (settings.reverse) ? -1 : 1;
-    var addLogo = (settings.disablelogo) ? '' : '<a id="dopeless_rotate_logo" title="Dopeless Rotate Plugin Home" target="_blank" href="http://www.dopeless-design.de/dopeless-rotate-jquery-plugin-360-degrees-product-viewer.html">Dopeless Rotate</a>';
+    var addLogo = (settings.disablelogo) ? '' : '<a id="dopeless_rotate_logo" title="Dopeless Rotate Plugin Home" target="_blank" href="http://www.dopeless-design.de/">Dopeless Rotate</a>';
     var currentFrame = settings.startfrom;
     var startFrame = settings.startfrom;
     var zoomfolder = settings.zoomfolder;
@@ -206,6 +206,12 @@ $.fn.tsRotate = function( options ) {
                     var title = $(this).attr('title');
                     var nomenu = parseInt($(this).attr('nomenu'));
                     var text = $(this).text();
+                    var link = $(this).attr('link');
+                    var target = $(this).attr('target');
+                    if(typeof target == 'undefined'){
+                        target = "_self";
+                    }
+                    
                     $(this).remove();
                     toti[index] = new Object();
                     toti[index]["frame"] = frame;
@@ -214,6 +220,8 @@ $.fn.tsRotate = function( options ) {
                     toti[index]["title"] = title;
                     toti[index]["text"] = text;
                     toti[index]["nomenu"] = nomenu;
+                    toti[index]["link"] = link;
+                    toti[index]["target"] = target;
                     if((index + 1) == counthotspots){
                         holder.append('<div class="highlights"><a href="#" class="highlights_but">'+hotspotsTitle+'</a></div>');
                         for (var i = 0; i < toti.length; i++) {
@@ -473,10 +481,20 @@ $.fn.tsRotate = function( options ) {
      
                 if(toti[itemid].text){
                     if (holder.find('#hs'+itemid+'').is('.posb')) {
-                        holder.find('#hs'+itemid+'').prepend('<span class="hltext">'+toti[itemid].text+'</span>');
+                        if(toti[itemid].link){
+                            holder.find('#hs'+itemid+'').prepend('<a class="hltext link" href="'+toti[itemid].link+'" target="'+toti[itemid].target+'">'+toti[itemid].text+'</a>');
+                        }
+                        else{
+                            holder.find('#hs'+itemid+'').prepend('<span class="hltext">'+toti[itemid].text+'</span>');
+                        }
                     }
                     else{
-                        holder.find('#hs'+itemid+'').append('<span class="hltext">'+toti[itemid].text+'</span>');
+                        if(toti[itemid].link){
+                            holder.find('#hs'+itemid+'').append('<a class="hltext link" href="'+toti[itemid].link+'" target="'+toti[itemid].target+'">'+toti[itemid].text+'</a>');
+                        }
+                        else{
+                            holder.find('#hs'+itemid+'').append('<span class="hltext">'+toti[itemid].text+'</span>');
+                        }
                     }
                 }
                 if (holder.find('#hs'+itemid+'').is('.posr')) {
