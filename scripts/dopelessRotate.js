@@ -1,6 +1,6 @@
 /*!
  * Dopeless Rotate - jQuery Plugin
- * version: 1.1.0 (12/03/2013)
+ * version: 1.1.5 (14/03/2013)
  *
  * Documentation and license http://www.dopeless-design.de/dopeless-rotate-jquery-plugin-for-360-degree-product-view.html
  *
@@ -8,13 +8,7 @@
  */
 
 (function( $ ){
-    var is_touch_device;
-    if (window.navigator.msMaxTouchPoints) {
-        is_touch_device = true;
-    }
-    else {
-        is_touch_device = false;
-    }
+var is_touch_device = 'ontouchstart' in document.documentElement;
 $.fn.tsRotate = function( options ) {  
     var settings = $.extend( {
         'zoom' : true,
@@ -171,7 +165,7 @@ $.fn.tsRotate = function( options ) {
                     var text = $(this).text();
                     $(this).remove();
                     toti[index] = new Object();
-                    toti[index]["frame"] = frame-1;
+                    toti[index]["frame"] = frame;
                     toti[index]["posix"] = posix;
                     toti[index]["posiy"] = posiy;
                     toti[index]["title"] = title;
@@ -189,62 +183,89 @@ $.fn.tsRotate = function( options ) {
     }
 
     if(hotspots){
-    
+        var expanded = false;
+        
         $(document).on('click','.highlights_but',function(e){e.preventDefault();});
     
     
-        if(!is_touch_device){
-            holder.find('.ts_img_view').on('click',function(){
-                holder.find('.highlights_item').removeClass('active');
+        holder.find('.ts_img_view').on('click',function(){
+            holder.find('.highlights_item').removeClass('active');
+            if(expanded){
                 collapseHighlight();
+            }
+        })
+        holder.on('mouseenter','.highlights',function(){
+            $(this).find('.highlights_item').css({'display':'block'});
+            $(this).on('mouseleave',function(){
+                $(this).find('.highlights_item').css({'display':'none'});
             })
-            holder.on('mouseenter','.highlights',function(){
-                $(this).find('.highlights_item').css({'display':'block'});
-                $(this).on('mouseleave',function(){
-                    $(this).find('.highlights_item').css({'display':'none'});
-                })
-            });
-            
-            holder.on('click','.highlights_item',function(e){
-                e.preventDefault(); 
-            });
-            holder.on('click','.highlights_item:not(.active)',function(){
-                holder.find('.highlights_item').removeClass('active');
-                $(this).addClass('active');
-                var itemid = parseInt($(this).attr('href'));
-                var frameno = parseInt(toti[itemid].frame);
-                if (frameno != currentFrame){
-                    hideHighlights();   
-                    getFrame(frameno,itemid);
+        });
+        
+        holder.on('click','.highlights_item',function(e){
+            e.stopPropagation();
+            e.preventDefault(); 
+        });
+        
+        holder.on('click','.highlights_item:not(.active)',function(e){
+            e.stopPropagation();
+            holder.find('.highlights_item').removeClass('active');
+            $(this).addClass('active');
+            var itemid = parseInt($(this).attr('href'));
+            var frameno = parseInt(toti[itemid].frame);
+            if (frameno != currentFrame){
+                hideHighlights();   
+                getFrame(frameno,itemid);
+            }
+            else{
+                if(expanded){
+                    collapseHighlight(function(){
+                        expandHighlight(itemid); 
+                    });
                 }
                 else{
-                    collapseHighlight();
-                    expandHighlight(itemid);
+                    expandHighlight(itemid); 
                 }
-            });
-            
-            holder.on( 'click', '.hotspot', function(){
-                var itemid = parseInt($(this).attr('id').replace('hs',''));
-                collapseHighlight();
+            }
+        });
+        
+        holder.on( 'click', '.hotspot:not(.expanded)', function(e){
+            e.stopPropagation();
+            var itemid = parseInt($(this).attr('id').replace('hs',''));
+            if(expanded){
+                collapseHighlight(function(){
+                    expandHighlight(itemid); 
+                });
+            }
+            else{
                 expandHighlight(itemid); 
-            });
-                
-            holder.on( 'click', '.expanded', function(){
+            }
+            
+        });
+        
+        
+        if(!is_touch_device){
+            holder.on( 'click', '.expanded', function(e){
+                e.stopPropagation();
                 holder.find('.highlights_item').removeClass('active');
                 collapseHighlight();
             })
         }
         
         if(is_touch_device){
+            
+            
+            
             holder.on('touchstart','.highlights',function(){
                 $(this).find('.highlights_item').css({'display':'block'});
             });
             
             holder.on('touchend','.highlights_item',function(e){
+                e.stopPropagation();
                 e.preventDefault(); 
             });
             
-            holder.on('touchend','.highlights_item:not(.active)',function(){
+            holder.on('touchend','.highlights_item:not(.active)',function(e){
+                e.stopPropagation();
                 holder.find('.highlights_item').removeClass('active');
                 $(this).addClass('active');
                 var itemid = parseInt($(this).attr('href'));
@@ -254,18 +275,32 @@ $.fn.tsRotate = function( options ) {
                     getFrame(frameno,itemid);
                 }
                 else{
-                    collapseHighlight();
+                    if(expanded){
+                        collapseHighlight(function(){
+                            expandHighlight(itemid); 
+                        });
+                    }
+                    else{
+                        expandHighlight(itemid); 
+                    }
+                }
+            });
+            
+            holder.on( 'touchend', '.hotspot:not(.expanded)', function(e){
+                e.stopPropagation();
+                var itemid = parseInt($(this).attr('id').replace('hs',''));
+                if(expanded){
+                    collapseHighlight(function(){
+                        expandHighlight(itemid); 
+                    });
+                }
+                else{
                     expandHighlight(itemid); 
                 }
             });
             
-            holder.on( 'touchend', '.hotspot', function(){
-                var itemid = parseInt($(this).attr('id').replace('hs',''));
-                collapseHighlight();
-                expandHighlight(itemid);  
-            });
-            
-            holder.on( 'touchend', '.expanded', function(){
+            holder.on( 'touchend', '.expanded', function(e){
+                e.stopPropagation();
                 holder.find('.highlights_item').removeClass('active');
                 collapseHighlight();
             })
@@ -324,16 +359,17 @@ $.fn.tsRotate = function( options ) {
             if(itemid !== undefined){
                 expandHighlight(itemid);
             }
-            
+            expanded = false;
             highlightsHidden = false;
         }
     
         function hideHighlights(){
             holder.find('.highlights_item').removeClass('active');
-            holder.find('.hotspot').fadeOut(50, function(){
+            holder.find('.hotspot').fadeOut(150, function(){
                 $(this).remove();
             });
                 highlightsHidden = true;
+                expanded = false;
         }
         
         function expandHighlight(itemid){
@@ -363,16 +399,18 @@ $.fn.tsRotate = function( options ) {
                     var hsheight = holder.find('#hs'+itemid+'').outerHeight();
                     var newhsposition = hsposition.top - hsheight + 20;
                     holder.find('#hs'+itemid+'').css({'top':newhsposition+'px'});
-                }     
+                }
+                expanded = true;
             }
         }
         
-        function collapseHighlight(){
- 
-            holder.find('.expanded').each(function(){
-            var itemid = parseInt($(this).attr('id').replace('hs',''));
+        function collapseHighlight(callback){
+            var itemid = parseInt(holder.find('.expanded').attr('id').replace('hs',''));
             holder.find('.expanded').css({'top':toti[itemid].posiy+'%','left':toti[itemid].posix+'%'}).removeClass('expanded').find('.hltitle,.hltext').remove();
-            });
+            expanded = false;
+            if(callback){
+                callback();
+            }
         }
     
     }
@@ -391,9 +429,7 @@ $.fn.tsRotate = function( options ) {
     function rotateImg(enterPosition){  
         doc.on('mousemove.dragrotate', function(e){
             
-            if(hotspots){
-                hideHighlights();
-            }
+            
             if(changeAxis){
                 var cursorPosition = e.pageY - contOffset.top;
             }
@@ -401,10 +437,20 @@ $.fn.tsRotate = function( options ) {
                 var cursorPosition = e.pageX - contOffset.left;
             }
             var xOffset = cursorPosition - enterPosition;
+            
+            
+            
             var step = Math.round(contWidth/countFrames)*direction;
             var frameOffset = Math.round(xOffset/step);
             var cycles = Math.abs(Math.floor((frameOffset+startFrame)/countFrames));
             currentFrame = startFrame + frameOffset;
+            
+            if(hotspots){
+                if(currentFrame != startFrame){
+                    hideHighlights();
+                }
+            }
+            
             if(currentFrame >= countFrames){
                 currentFrame = currentFrame - countFrames*cycles;
             }       
@@ -427,9 +473,7 @@ $.fn.tsRotate = function( options ) {
     
     function rotateImgMobile(enterPosition){    
         holder.on('touchmove.dragrotatemob', function(mobileEvent) {
-            if(hotspots){
-                hideHighlights();
-            }
+           
             var event = window.event;
             if(changeAxis){
                 var cursorPosition = event.touches[0].pageY - contOffset.top;
@@ -442,6 +486,13 @@ $.fn.tsRotate = function( options ) {
             var frameOffset = Math.round(xOffset/step);
             var cycles = Math.abs(Math.floor((frameOffset+startFrame)/countFrames));
             currentFrame = startFrame + frameOffset;
+            
+            if(hotspots){
+                if(currentFrame != startFrame){
+                    hideHighlights();
+                }
+            }
+            
             if(currentFrame >= countFrames){
                 currentFrame = currentFrame - countFrames*cycles;
             }       
@@ -706,27 +757,27 @@ $.fn.tsRotate = function( options ) {
         };  
     }
     
-    if(!is_touch_device){
-        holder.on('mousedown.initrotate', function(e){
-            
-            if(!zoomon){
-                if(changeAxis){
-                    var enterPosition = e.pageY - contOffset.top;
-                }
-                else{
-                    var enterPosition = e.pageX - contOffset.left;
-                }
-                rotateImg(enterPosition);
-            }
-        });
+    
+    holder.on('mousedown.initrotate', function(e){
         
-        holder.find('.zoom').on('click.initzoom', function(e){
-            var offset = holder.offset();
-            var startXpos = e.pageX - offset.left;
-            var startYpos = e.pageY - offset.top;
-            zoomImg(startXpos,startYpos,offset);
-        });
-    }
+        if(!zoomon){
+            if(changeAxis){
+                var enterPosition = e.pageY - contOffset.top;
+            }
+            else{
+                var enterPosition = e.pageX - contOffset.left;
+            }
+            rotateImg(enterPosition);
+        }
+    });
+    
+    holder.find('.zoom').on('click.initzoom', function(e){
+        var offset = holder.offset();
+        var startXpos = e.pageX - offset.left;
+        var startYpos = e.pageY - offset.top;
+        zoomImg(startXpos,startYpos,offset);
+    });
+    
     
     if(is_touch_device){
     
