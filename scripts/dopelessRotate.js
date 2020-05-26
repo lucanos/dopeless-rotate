@@ -1,6 +1,6 @@
 /*!
  * Dopeless Rotate - jQuery Plugin
- * version: 1.2.1 (24/03/2013)
+ * version: 1.2.2 (23/05/2013)
  *
  * Documentation and license http://www.dopeless-design.de/dopeless-rotate-jquery-plugin-for-360-degree-product-view.html
  *
@@ -9,6 +9,7 @@
 
 (function( $ ){
 var is_touch_device = 'ontouchstart' in document.documentElement;
+
 $.fn.tsRotate = function( options ) {  
     var settings = $.extend( {
         'zoom' : true,
@@ -26,10 +27,13 @@ $.fn.tsRotate = function( options ) {
         'changeAxis' : false,
         'rightclass' : false,
         'leftclass' : false,
+        'playstopclass' : false,
         'autorotate' : false,
-        'autorotatespeed' : 100
+        'rotateloop' : true,
+        'autorotatespeed' : 100,
+        'rotatehover' : false,
+        'speedmultiplyer' : 1
     }, options);
-    
     var zoomDiv = (settings.zoom) ? '<div class="zoom"></div>' : '';
     var pointerDiv = (settings.changeAxis) ? '' : '<div class="round"><div class="pointer_object"></div><div class="pointer"></div></div>';
     var direction = (settings.reverse) ? -1 : 1;
@@ -44,8 +48,18 @@ $.fn.tsRotate = function( options ) {
     var changeAxis = settings.changeAxis;
     var goright = settings.rightclass;
     var goleft = settings.leftclass;
+    var playstop = settings.playstopclass;
     var isautorotate = settings.autorotate;
+    var isrotateloop = settings.rotateloop;
+    var rotatehover = settings.rotatehover;
+    if(!isrotateloop){
+        var autorotateFrame = 0;
+    }
     var autorotatespeed = settings.autorotatespeed;
+    var speedMult = settings.speedmultiplyer;
+    if(speedMult != 1){
+        speedMult = speedMult/10 + 1;
+    }
     var hsFade = settings.hotspotsFade;
     if(hotspots){
         var toti;     
@@ -60,6 +74,11 @@ $.fn.tsRotate = function( options ) {
     a.href = fullpath;
     var imgpath = a.pathname + a.search;
     var thisName = $(this).attr('id');
+    if (playstop){
+        if(isautorotate){
+            $('.'+thisName+'.'+playstop+'').addClass('busy');
+        }
+    }
     var contWidth = $(this).attr('width');
     var contHeight = $(this).attr('height');
     $(this).wrap('<div class="ts_holder" id="holder_'+thisName+'"/>');
@@ -88,6 +107,9 @@ $.fn.tsRotate = function( options ) {
     var loadingBarInsideFWidth = loadingBarWidth - 4;
     var loadingBarInsideWidth;
     var autorotate;
+    var rotateright;
+    var rotateleft;
+    var playing = false;
     holder.bind('dragstart', function(event) { event.preventDefault() });
     holder.children().bind('dragstart', function(event) { event.preventDefault() });
     holder.css({'width':contWidth, 'height':contHeight});
@@ -105,8 +127,7 @@ $.fn.tsRotate = function( options ) {
         _css('.zoom',{'top':setRoundWidth+setRoundWidth/10+10, 'right':(setRoundWidth-30)/2-3});
     }
     _css('.pointer_object',{'width':setPointerObjectWidth, 'height':setPointerObjectWidth, 'left':setPointerObjectOffset, 'top':setPointerObjectOffset});
-    holder.find('.loading_bg').fadeIn();    
-    
+    holder.find('.loading_bg').fadeIn();
     function _css(elem,rules){
         holder.find(elem).css(rules);
     }
@@ -196,7 +217,7 @@ $.fn.tsRotate = function( options ) {
         }
         
         if(isautorotate){
-            autorotate = setInterval(nextFrame, autorotatespeed);  
+            startautorotate();
         }
                 
         
@@ -204,11 +225,11 @@ $.fn.tsRotate = function( options ) {
     
     if(isautorotate){
         holder.on('mousedown',function(){
-             clearInterval(autorotate);
+             stopautorotate();
         })
         if(is_touch_device){
             holder.on('touchstart',function(){
-                clearInterval(autorotate);
+                stopautorotate();
             })
         }
     }
@@ -373,6 +394,29 @@ $.fn.tsRotate = function( options ) {
             })();
         }  
         
+        function startautorotate(rtl){
+            playing = true;
+            if(!rtl){
+                autorotate = setInterval(nextFrame, autorotatespeed);
+            }
+            if(rtl){
+                autorotate = setInterval(prevFrame, autorotatespeed);
+            }
+            
+            if(playstop){
+                $('.'+thisName+'.'+playstop+'').addClass('busy');
+            }
+        }
+        
+        function stopautorotate(){
+            clearInterval(autorotate);
+            playing = false;
+            isrotateloop = true;
+            if(playstop){
+                $('.'+thisName+'.'+playstop+'').removeClass('busy');
+            }
+        }
+        
         function showHighlights(itemid){
             holder.find('.expanded').removeClass('expanded').find('.hltitle,.hltext').remove();
             holder.find('.highlights_item').removeClass('active');
@@ -528,6 +572,15 @@ $.fn.tsRotate = function( options ) {
             startFrame = currentFrame;
             doc.off('.dragrotate');
         });
+        if(rotatehover){
+            holder.on('mouseleave.dragrotate', function(){
+                if(hotspots && highlightsHidden){
+                    showHighlights();
+                }
+                startFrame = currentFrame;
+                doc.off('.dragrotate');
+            });
+        }
     }
     
     function rotateImgMobile(enterPosition){    
@@ -618,19 +671,19 @@ $.fn.tsRotate = function( options ) {
             var zoomloading = false;
 
             holder.on('mousemove.dragpan', (function(e){
+                var hMoveLock = false;
+                var vMoveLock = false;
                 var currentXpos = e.pageX - offset.left;
                 var currentYpos = e.pageY - offset.top;
                 var xlimit = (zoomWidth-contWidth)*-1;
                 var ylimit = (zoomHeight-contHeight)*-1;
 
-                var xSpeedCoeff = Math.floor(zoomWidth/contWidth);
-                var ySpeedCoeff = Math.floor(zoomHeight/contHeight);
+                var xSpeedCoeff = Math.floor(zoomWidth/contWidth)*speedMult;
+                var ySpeedCoeff = Math.floor(zoomHeight/contHeight)*speedMult;
                 var moveLeft = startXpos - currentXpos;
                 var moveTop = startYpos - currentYpos;
                 var leftOffset = leftOverflow + moveLeft*xSpeedCoeff;
                 var topOffset = topOverflow + moveTop*ySpeedCoeff;
-                var hMoveLock = false;
-                var vMoveLock = false;
                     
                 if(leftOffset >= 0){
                     hMoveLock = true;
@@ -669,8 +722,8 @@ $.fn.tsRotate = function( options ) {
         var currentYpos = sieventm.touches[0].pageY - offset.top;   
         var xlimit = (zoomWidth-contWidth)*-1;
         var ylimit = (zoomHeight-contHeight)*-1;
-        var xSpeedCoeff = Math.floor(zoomWidth/contWidth);
-        var ySpeedCoeff = Math.floor(zoomHeight/contHeight);
+        var xSpeedCoeff = Math.floor(zoomWidth/contWidth)*speedMult;
+        var ySpeedCoeff = Math.floor(zoomHeight/contHeight)*speedMult;
         var moveLeft = startXpos - currentXpos;
         var moveTop = startYpos - currentYpos;
         var leftOffset = leftOverflow + moveLeft*xSpeedCoeff*-1;
@@ -814,6 +867,21 @@ $.fn.tsRotate = function( options ) {
         }
     });
     
+    if(rotatehover){
+        holder.on('mouseenter.initrotate', function(e){
+        
+        if(!zoomon){
+            if(changeAxis){
+                var enterPosition = e.pageY - contOffset.top;
+            }
+            else{
+                var enterPosition = e.pageX - contOffset.left;
+            }
+            rotateImg(enterPosition);
+        }
+        });
+    }
+    
     holder.find('.zoom').on('click.initzoom', function(e){
         var offset = holder.offset();
         var startXpos = e.pageX - offset.left;
@@ -853,23 +921,29 @@ $.fn.tsRotate = function( options ) {
     
     function nextFrame(){
         if(hotspots){
-                hideHighlights();
+            hideHighlights();
+        }
+        
+        currentFrame++;
+        
+        if(currentFrame >= countFrames){
+            currentFrame = 0;
+        }
+        image.attr('src', imagelist[currentFrame]);
+        if(!changeAxis){
+            setPointer();
+        }
+        
+        startFrame = currentFrame;
+        if(hotspots){
+            showHighlights();
+        }
+        if(!isrotateloop){
+            autorotateFrame = autorotateFrame + 1;
+            if(autorotateFrame == countFrames){
+                stopautorotate();
             }
-            
-            currentFrame++;
-            
-            if(currentFrame >= countFrames){
-                currentFrame = 0;
-            }
-            image.attr('src', imagelist[currentFrame]);
-            if(!changeAxis){
-                setPointer();
-            }
-            
-            startFrame = currentFrame;
-            if(hotspots){
-                showHighlights();
-            }
+        }
     }
     
     function prevFrame(){
@@ -896,85 +970,54 @@ $.fn.tsRotate = function( options ) {
     
  
     if(goright){
-        if(isautorotate){
-            $('.'+thisName+'.'+goright+'').on('mousedown',function(){
-                clearInterval(autorotate);
-            })
-        }
-        
         $('.'+thisName+'.'+goright+'').on('click',function(){
+            stopautorotate();
             nextFrame();
         })
         
-        $('.'+thisName+'.'+goright+'').on('mousedown.btnrotateright',function(){
-            var rotateright = setInterval(nextFrame, 100);           
-            doc.on('mouseup',function(){
-                clearInterval(rotateright);
-                doc.off('.btnrotateright');
-            })
+        $('.'+thisName+'.'+goright+'').on('mousedown touchstart',function(){
+            stopautorotate();
+            if(!playing){
+                startautorotate();
+                $(this).on('mouseleave mouseup touchend touchmove',function(){
+                    stopautorotate();
+                })
+            }
         })
     }
     
     
     
     if(goleft){
-        if(isautorotate){
-            $('.'+thisName+'.'+goleft+'').on('mousedown',function(){
-                clearInterval(autorotate);
-            })
-        }
-        
         $('.'+thisName+'.'+goleft+'').on('click',function(){
+            stopautorotate();
             prevFrame();
         })
-        $('.'+thisName+'.'+goleft+'').on('mousedown.btnrotateleft',function(){
-            var rotateleft = setInterval(prevFrame, 100);           
-            doc.on('mouseup',function(){
-                clearInterval(rotateleft);
-                doc.off('.btnrotateleft');
-            })
+        $('.'+thisName+'.'+goleft+'').on('mousedown touchstart',function(){
+            stopautorotate();
+            if(!playing){
+                startautorotate(true);
+                $(this).on('mouseleave mouseup touchend touchmove',function(){
+                    stopautorotate();
+                })
+            }
+        })
+    }
+    
+    if(playstop){
+        $('.'+thisName+'.'+playstop+'').on('click',function(){
+            if(playing){
+                stopautorotate();
+            }
+            else{
+                startautorotate();
+            }
+            
         })
     }
     
     
-    if(is_touch_device){
-        if(goright){
-            if(isautorotate){
-                $('.'+thisName+'.'+goright+'').on('touchstart',function(){
-                    clearInterval(autorotate);
-                })
-            }
-            
-            $('.'+thisName+'.'+goright+'').on('touchstart.btnrotateright',function(){
-                if(zoomon){
-                    zoomOut();
-                }
-                var rotateright = setInterval(nextFrame, 100);           
-                doc.on('touchend',function(){
-                    clearInterval(rotateright);
-                    doc.off('.btnrotateright');
-                })
-            })
-        }
-        if(goleft){
-            if(isautorotate){
-                $('.'+thisName+'.'+goleft+'').on('touchstart',function(){
-                    clearInterval(autorotate);
-                })
-            }
-            
-            $('.'+thisName+'.'+goleft+'').on('touchstart.btnrotateleft',function(){
-                if(zoomon){
-                    zoomOut();
-                }
-                var rotateleft = setInterval(prevFrame, 100);           
-                doc.on('touchend',function(){
-                    clearInterval(rotateleft);
-                    doc.off('.btnrotateleft');
-                })
-            })
-        }
-    }
+    
     
     
 };
