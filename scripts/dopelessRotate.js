@@ -1,6 +1,6 @@
 /*!
  * Dopeless Rotate - jQuery Plugin
- * version: 1.1.6 (15/03/2013)
+ * version: 1.2 (19/03/2013)
  *
  * Documentation and license http://www.dopeless-design.de/dopeless-rotate-jquery-plugin-for-360-degree-product-view.html
  *
@@ -22,7 +22,9 @@ $.fn.tsRotate = function( options ) {
         'pathtophp' : 'dopelessRotate/scripts/',
         'hotspots' : false,
         'hotspotsTitle' : 'Highlights',
-        'changeAxis' : false
+        'changeAxis' : false,
+        'rightclass' : false,
+        'leftclass' : false
     }, options);
     
     var zoomDiv = (settings.zoom) ? '<div class="zoom"></div>' : '';
@@ -37,6 +39,8 @@ $.fn.tsRotate = function( options ) {
     var hotspots = settings.hotspots;
     var highlightsHidden = true;
     var changeAxis = settings.changeAxis;
+    var goright = settings.rightclass;
+    var goleft = settings.leftclass;
     if(hotspots){
         var toti;     
     }
@@ -253,7 +257,16 @@ $.fn.tsRotate = function( options ) {
         }
         
         if(is_touch_device){
-            holder.on('touchstart','.highlights',function(){
+            holder.find('.ts_img_view').on('touchstart',function(){
+                holder.find('.highlights_item').removeClass('active');
+                if(expanded){
+                    collapseHighlight();
+                }
+            })
+            
+            holder.on('touchstart','.highlights',function(e){
+                e.stopPropagation();
+                e.preventDefault(); 
                 $(this).find('.highlights_item').css({'display':'block'});
             });
             
@@ -512,7 +525,7 @@ $.fn.tsRotate = function( options ) {
             }
         });
         holder.on('touchend.dragrotatemob', function(mobileEvent) {
-            if(hotspots){
+            if(hotspots && highlightsHidden){
                 showHighlights();
             }
             startFrame = currentFrame;
@@ -605,31 +618,7 @@ $.fn.tsRotate = function( options ) {
             }));
             doc.on('mousedown.zoomof', (function(){
                 if(!zoomloading){
-                    if(hotspots && highlightsHidden){
-                        showHighlights();
-                        holder.find('.highlights').fadeIn();
-                    }
-                    holder.off('.dragpan');
-                    holder.off('mousedown.zoomof');
-                    image.attr('src', imagelist[currentFrame]);
-                    image.css({
-                        'left':0,
-                        'top':0,
-                        'width':contWidth,
-                        'height':contHeight
-                    });
-                    imagezoom.animate({
-                        width: contWidth,
-                        height: contHeight,
-                        left:0,
-                        top:0
-                        }, 100, 'linear', function() {
-                            imagezoom.fadeOut(100);
-                            });
-                    holder.find('.round').fadeIn();
-                    holder.find('.zoom').fadeIn();          
-                    holder.removeClass('zoomout');
-                    zoomon = false;
+                   zoomOut();
                 }
             }));
         };  
@@ -739,30 +728,38 @@ $.fn.tsRotate = function( options ) {
             
             holder.on('click.zoomofmob', (function(){
                 if(!zoomloading){
-                    if(hotspots && highlightsHidden){
-                        showHighlights();
-                        holder.find('.highlights').fadeIn();
-                    }
-                    holder.off('.zoomendmob');
-                    holder.off('.dragstartmob');
-                    image.attr('src', imagelist[currentFrame]);
-                    image.css({'left':0,'top':0,'width':contWidth,'height':contHeight});
-                    imagezoom.animate({
-                        width: contWidth,
-                        height: contHeight,
-                        left:0,
-                        top:0
-                        }, 100, 'linear', function() {
-                            imagezoom.fadeOut(100);
-                            });
-                    $(holder).find('.round').fadeIn();
-                    $('.zoom').fadeIn();            
-                    holder.removeClass('zoomout');
-                    zoomon = false;
+                    zoomOut();
                 }
             }));
         };  
     }
+    
+    
+    function zoomOut(){
+        if(hotspots && highlightsHidden){
+            showHighlights();
+            holder.find('.highlights').fadeIn();
+        }
+        holder.off('.dragpan');
+        holder.off('mousedown.zoomof');
+        holder.off('.zoomendmob');
+        holder.off('.dragstartmob');
+        image.attr('src', imagelist[currentFrame]);
+        image.css({'left':0,'top':0,'width':contWidth,'height':contHeight});
+        imagezoom.animate({
+            width: contWidth,
+            height: contHeight,
+            left:0,
+            top:0
+            }, 100, 'linear', function() {
+                imagezoom.fadeOut(100);
+                });
+        holder.find('.round').fadeIn();
+        holder.find('.zoom').fadeIn();          
+        holder.removeClass('zoomout');
+        zoomon = false;
+    }
+    
     
     
     holder.on('mousedown.initrotate', function(e){
@@ -786,6 +783,8 @@ $.fn.tsRotate = function( options ) {
     });
     
     
+    
+   
     if(is_touch_device){
     
         holder.find(image).on('touchstart.initrotatemob', function(mobileEvent){
@@ -811,5 +810,106 @@ $.fn.tsRotate = function( options ) {
             zoomImgMobile(offset);  
         }); 
     }
+    
+    
+    function nextFrame(){
+        if(hotspots){
+                hideHighlights();
+            }
+            
+            currentFrame++;
+            
+            if(currentFrame >= countFrames){
+                currentFrame = 0;
+            }
+            image.attr('src', imagelist[currentFrame]);
+            if(!changeAxis){
+                setPointer();
+            }
+            
+            startFrame = currentFrame;
+            if(hotspots){
+                showHighlights();
+            }
+    }
+    
+    function prevFrame(){
+        if(hotspots){
+                hideHighlights();
+            }
+            
+            currentFrame--;
+            
+            if(currentFrame < 0){
+                currentFrame = countFrames;
+            }
+            image.attr('src', imagelist[currentFrame]);
+            if(!changeAxis){
+                setPointer();
+            }
+            
+            startFrame = currentFrame;
+            if(hotspots){
+                showHighlights();
+            }
+    }
+    
+    
+ 
+    if(goright){
+        $('.'+thisName+'.'+goright+'').on('click',function(){
+            nextFrame();
+        })
+        
+        $('.'+thisName+'.'+goright+'').on('mousedown.btnrotateright',function(){
+            var rotateright = setInterval(nextFrame, 100);           
+            doc.on('mouseup',function(){
+                clearInterval(rotateright);
+                doc.off('.btnrotateright');
+            })
+        })
+    }
+    
+    
+    
+    if(goleft){
+        $('.'+thisName+'.'+goleft+'').on('click',function(){
+            prevFrame();
+        })
+        $('.'+thisName+'.'+goleft+'').on('mousedown.btnrotateleft',function(){
+            var rotateleft = setInterval(prevFrame, 100);           
+            doc.on('mouseup',function(){
+                clearInterval(rotateleft);
+                doc.off('.btnrotateleft');
+            })
+        })
+    }
+    
+    
+    if(is_touch_device){
+        
+            $('.'+thisName+'.'+goright+'').on('touchstart.btnrotateright',function(){
+                if(zoomon){
+                    zoomOut();
+                }
+                var rotateright = setInterval(nextFrame, 100);           
+                doc.on('touchend',function(){
+                    clearInterval(rotateright);
+                    doc.off('.btnrotateright');
+                })
+            })
+            $('.'+thisName+'.'+goleft+'').on('touchstart.btnrotateleft',function(){
+                if(zoomon){
+                    zoomOut();
+                }
+                var rotateleft = setInterval(prevFrame, 100);           
+                doc.on('touchend',function(){
+                    clearInterval(rotateleft);
+                    doc.off('.btnrotateleft');
+                })
+            })
+    }
+    
+    
 };
 })( jQuery );
