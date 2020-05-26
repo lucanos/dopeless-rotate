@@ -1,6 +1,6 @@
 /*!
  * Dopeless Rotate - jQuery Plugin
- * version: 1.2.3 (23/05/2013)
+ * version: 1.2.4 (28/05/2013)
  *
  * Documentation and license http://www.dopeless-design.de/dopeless-rotate-jquery-plugin-for-360-degree-product-view.html
  *
@@ -83,6 +83,15 @@ $.fn.tsRotate = function( options ) {
     }
     var contWidth = $(this).attr('width');
     var contHeight = $(this).attr('height');
+    
+    var screenWidth = screen.width;
+    
+    if(contWidth > screenWidth){
+        contHeight = Math.ceil(screenWidth*contHeight/contWidth);
+        contWidth = screenWidth;
+    }
+    
+    
     $(this).wrap('<div class="ts_holder" id="holder_'+thisName+'"/>');
     var doc = $(document);
     var holder = $('#holder_'+thisName+'');
@@ -396,28 +405,7 @@ $.fn.tsRotate = function( options ) {
             })();
         }  
         
-        function startautorotate(rtl){
-            playing = true;
-            if(!rtl){
-                autorotate = setInterval(nextFrame, autorotatespeed);
-            }
-            if(rtl){
-                autorotate = setInterval(prevFrame, autorotatespeed);
-            }
-            
-            if(playstop){
-                $('.'+thisName+'.'+playstop+'').addClass('busy');
-            }
-        }
         
-        function stopautorotate(){
-            clearInterval(autorotate);
-            playing = false;
-            isrotateloop = true;
-            if(playstop){
-                $('.'+thisName+'.'+playstop+'').removeClass('busy');
-            }
-        }
         
         function showHighlights(itemid){
             holder.find('.expanded').removeClass('expanded').find('.hltitle,.hltext').remove();
@@ -519,6 +507,30 @@ $.fn.tsRotate = function( options ) {
         }
     
     }
+    
+    function startautorotate(rtl){
+        playing = true;
+        if(!rtl){
+            autorotate = setInterval(nextFrame, autorotatespeed);
+        }
+        if(rtl){
+            autorotate = setInterval(prevFrame, autorotatespeed);
+        }
+        
+        if(playstop){
+            $('.'+thisName+'.'+playstop+'').addClass('busy');
+        }
+    }
+    
+    function stopautorotate(){
+        clearInterval(autorotate);
+        playing = false;
+        isrotateloop = true;
+        if(playstop){
+            $('.'+thisName+'.'+playstop+'').removeClass('busy');
+        }
+    }
+    
     
     function setPointer(){
         var corner = Math.floor(360/countFrames)*direction;                     
@@ -1034,10 +1046,5 @@ $.fn.tsRotate = function( options ) {
             
         })
     }
-    
-    
-    
-    
-    
 };
 })( jQuery );
