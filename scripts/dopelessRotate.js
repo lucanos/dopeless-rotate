@@ -1,6 +1,6 @@
 /*!
  * Dopeless Rotate - jQuery Plugin
- * version: 1.1.5 (14/03/2013)
+ * version: 1.1.6 (15/03/2013)
  *
  * Documentation and license http://www.dopeless-design.de/dopeless-rotate-jquery-plugin-for-360-degree-product-view.html
  *
@@ -194,6 +194,7 @@ $.fn.tsRotate = function( options ) {
                 collapseHighlight();
             }
         })
+        
         holder.on('mouseenter','.highlights',function(){
             $(this).find('.highlights_item').css({'display':'block'});
             $(this).on('mouseleave',function(){
@@ -217,7 +218,7 @@ $.fn.tsRotate = function( options ) {
                 getFrame(frameno,itemid);
             }
             else{
-                if(expanded){
+                if(expanded){   
                     collapseHighlight(function(){
                         expandHighlight(itemid); 
                     });
@@ -252,9 +253,6 @@ $.fn.tsRotate = function( options ) {
         }
         
         if(is_touch_device){
-            
-            
-            
             holder.on('touchstart','.highlights',function(){
                 $(this).find('.highlights_item').css({'display':'block'});
             });
@@ -359,17 +357,26 @@ $.fn.tsRotate = function( options ) {
             if(itemid !== undefined){
                 expandHighlight(itemid);
             }
-            expanded = false;
             highlightsHidden = false;
         }
     
         function hideHighlights(){
-            holder.find('.highlights_item').removeClass('active');
-            holder.find('.hotspot').fadeOut(150, function(){
-                $(this).remove();
-            });
+            if(expanded){
+                collapseHighlight(function(){
+                    holder.find('.highlights_item').removeClass('active');
+                    holder.find('.hotspot').fadeOut(150, function(){
+                        $(this).remove();
+                    });
+                    highlightsHidden = true;
+                })
+            }
+            else{
+                holder.find('.highlights_item').removeClass('active');
+                holder.find('.hotspot').fadeOut(150, function(){
+                    $(this).remove();
+                });
                 highlightsHidden = true;
-                expanded = false;
+            }
         }
         
         function expandHighlight(itemid){
@@ -598,7 +605,7 @@ $.fn.tsRotate = function( options ) {
             }));
             doc.on('mousedown.zoomof', (function(){
                 if(!zoomloading){
-                    if(hotspots){
+                    if(hotspots && highlightsHidden){
                         showHighlights();
                         holder.find('.highlights').fadeIn();
                     }
@@ -732,7 +739,7 @@ $.fn.tsRotate = function( options ) {
             
             holder.on('click.zoomofmob', (function(){
                 if(!zoomloading){
-                    if(hotspots){
+                    if(hotspots && highlightsHidden){
                         showHighlights();
                         holder.find('.highlights').fadeIn();
                     }
