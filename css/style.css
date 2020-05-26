@@ -157,3 +157,125 @@
 #dopeless_rotate_logo:hover{
 	color:#000;
 }
+
+
+
+.hotspot{
+	position:absolute;
+	width:20px;
+	height:20px;
+	background:#ededed;
+	background-image:url(plus.png);
+	background-position:0 0;
+	background-repeat:no-repeat;
+	-webkit-border-radius: 14px;
+	-moz-border-radius: 14px;
+	border-radius: 14px;
+	display:none;
+	border:2px solid #e89109;
+	color:#e89109;
+	font-weight:bold;
+	cursor:pointer;
+	-webkit-box-shadow:  0px 0px 5px 0px rgba(0, 0, 0, 0.3);
+	box-shadow:  0px 0px 5px 0px rgba(0, 0, 0, 0.3);
+	z-index:100;
+}
+
+.hotspot.expanded{
+	min-height:20px;
+	min-width:20px;
+	width:auto;
+	height:auto;
+	max-width:40%;
+	margin-right:10px;
+	margin-bottom:10px;
+	background-image:url(minus.png);
+	z-index:1000;
+}
+
+.hotspot .hltitle{
+	display:block;
+	font-size:14px;
+	padding:0px 5px 0px 22px;
+	line-height:20px;
+}
+.hotspot .hltext{
+	display:block;
+	font-size:11px;
+	font-weight:400;
+	padding: 2px 5px;
+	color:#555;
+}
+
+.hotspot.posr{
+	background-position:100% 0;
+}
+
+.hotspot.posb{
+	background-position:0 100%;
+}
+
+.hotspot.posb.posr{
+	background-position:100% 100%;
+}
+
+.hotspot.posr .hltitle{
+	text-align:right;
+	padding:0px 22px 0px 5px;
+}
+
+.hotspot.posr .hltext{
+	text-align:right;
+}
+
+
+.hotspot.posb.posr .hltitle{
+	text-align:right;
+}
+
+.highlights{
+	position:absolute;
+	z-index:60;
+	top:10px;
+	left:10px;
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+	border-radius: 4px;
+	background:#e89109;
+	color:#fff;
+	font-size:12px;
+	padding:2px 4px;
+	text-decoration:none;
+	-webkit-box-shadow:  1px 1px 0px 0px rgba(211, 132, 8, 1);
+	box-shadow:  1px 1px 0px 0px rgba(211, 132, 8, 1);
+	text-shadow:1px 1px 1px #d38408;
+}
+
+.highlights:hover{
+	background:#df8c0a;
+	-webkit-box-shadow:  none;
+	box-shadow:  none;
+}
+
+
+
+.highlights a{
+	text-decoration:none;
+	display:block;
+	color:#fff;
+}
+
+.highlights a.highlights_item{
+	padding-left:10px;
+	padding-right:3px;
+	line-height:20px;
+}
+
+.highlights a.active{
+	color:#ccc;
+	cursor:default;
+}
+
+.sethotspot{
+	display:none;
+}
