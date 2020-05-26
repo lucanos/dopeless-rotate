@@ -1,6 +1,6 @@
 /*!
  * Dopeless Rotate - jQuery Plugin
- * version: 1.2 (19/03/2013)
+ * version: 1.2.1 (24/03/2013)
  *
  * Documentation and license http://www.dopeless-design.de/dopeless-rotate-jquery-plugin-for-360-degree-product-view.html
  *
@@ -22,9 +22,12 @@ $.fn.tsRotate = function( options ) {
         'pathtophp' : 'dopelessRotate/scripts/',
         'hotspots' : false,
         'hotspotsTitle' : 'Highlights',
+        'hotspotsFade' : true,
         'changeAxis' : false,
         'rightclass' : false,
-        'leftclass' : false
+        'leftclass' : false,
+        'autorotate' : false,
+        'autorotatespeed' : 100
     }, options);
     
     var zoomDiv = (settings.zoom) ? '<div class="zoom"></div>' : '';
@@ -41,6 +44,9 @@ $.fn.tsRotate = function( options ) {
     var changeAxis = settings.changeAxis;
     var goright = settings.rightclass;
     var goleft = settings.leftclass;
+    var isautorotate = settings.autorotate;
+    var autorotatespeed = settings.autorotatespeed;
+    var hsFade = settings.hotspotsFade;
     if(hotspots){
         var toti;     
     }
@@ -81,7 +87,7 @@ $.fn.tsRotate = function( options ) {
     var loadingBarBottom = Math.round(loadingHeight/100*15);
     var loadingBarInsideFWidth = loadingBarWidth - 4;
     var loadingBarInsideWidth;
-    
+    var autorotate;
     holder.bind('dragstart', function(event) { event.preventDefault() });
     holder.children().bind('dragstart', function(event) { event.preventDefault() });
     holder.css({'width':contWidth, 'height':contHeight});
@@ -166,6 +172,7 @@ $.fn.tsRotate = function( options ) {
                     var posix = $(this).attr('posix');
                     var posiy = $(this).attr('posiy');
                     var title = $(this).attr('title');
+                    var nomenu = parseInt($(this).attr('nomenu'));
                     var text = $(this).text();
                     $(this).remove();
                     toti[index] = new Object();
@@ -174,18 +181,38 @@ $.fn.tsRotate = function( options ) {
                     toti[index]["posiy"] = posiy;
                     toti[index]["title"] = title;
                     toti[index]["text"] = text;
+                    toti[index]["nomenu"] = nomenu;
                     if((index + 1) == counthotspots){
                         holder.append('<div class="highlights"><a href="#" class="highlights_but">'+hotspotsTitle+'</a></div>');
                         for (var i = 0; i < toti.length; i++) {
-                            holder.find('.highlights').append('<a class="highlights_item" href="'+i+'">'+toti[i].title+'</a>');
-                            $('.highlights_item').css({'display':'none'});
+                            if(toti[i].nomenu != 1){
+                                holder.find('.highlights').append('<a class="highlights_item" href="'+i+'">'+toti[i].title+'</a>');
+                                $('.highlights_item').css({'display':'none'});
+                            }
                         }
                     }
                 });
             }
         }
+        
+        if(isautorotate){
+            autorotate = setInterval(nextFrame, autorotatespeed);  
+        }
+                
+        
     }
-
+    
+    if(isautorotate){
+        holder.on('mousedown',function(){
+             clearInterval(autorotate);
+        })
+        if(is_touch_device){
+            holder.on('touchstart',function(){
+                clearInterval(autorotate);
+            })
+        }
+    }
+    
     if(hotspots){
         var expanded = false;
         
@@ -377,17 +404,29 @@ $.fn.tsRotate = function( options ) {
             if(expanded){
                 collapseHighlight(function(){
                     holder.find('.highlights_item').removeClass('active');
-                    holder.find('.hotspot').fadeOut(150, function(){
+                    if(hsFade){
+                        holder.find('.hotspot').fadeOut(150, function(){
+                            $(this).remove();
+                        });
+                    }
+                    else{
+                        holder.find('.hotspot').css({'display':'none'});
                         $(this).remove();
-                    });
+                    }
                     highlightsHidden = true;
                 })
             }
             else{
                 holder.find('.highlights_item').removeClass('active');
-                holder.find('.hotspot').fadeOut(150, function(){
+                if(hsFade){
+                    holder.find('.hotspot').fadeOut(150, function(){
+                        $(this).remove();
+                    });
+                }
+                else{
+                    holder.find('.hotspot').css({'display':'none'});
                     $(this).remove();
-                });
+                }
                 highlightsHidden = true;
             }
         }
@@ -857,6 +896,12 @@ $.fn.tsRotate = function( options ) {
     
  
     if(goright){
+        if(isautorotate){
+            $('.'+thisName+'.'+goright+'').on('mousedown',function(){
+                clearInterval(autorotate);
+            })
+        }
+        
         $('.'+thisName+'.'+goright+'').on('click',function(){
             nextFrame();
         })
@@ -873,6 +918,12 @@ $.fn.tsRotate = function( options ) {
     
     
     if(goleft){
+        if(isautorotate){
+            $('.'+thisName+'.'+goleft+'').on('mousedown',function(){
+                clearInterval(autorotate);
+            })
+        }
+        
         $('.'+thisName+'.'+goleft+'').on('click',function(){
             prevFrame();
         })
@@ -887,7 +938,13 @@ $.fn.tsRotate = function( options ) {
     
     
     if(is_touch_device){
-        
+        if(goright){
+            if(isautorotate){
+                $('.'+thisName+'.'+goright+'').on('touchstart',function(){
+                    clearInterval(autorotate);
+                })
+            }
+            
             $('.'+thisName+'.'+goright+'').on('touchstart.btnrotateright',function(){
                 if(zoomon){
                     zoomOut();
@@ -898,6 +955,14 @@ $.fn.tsRotate = function( options ) {
                     doc.off('.btnrotateright');
                 })
             })
+        }
+        if(goleft){
+            if(isautorotate){
+                $('.'+thisName+'.'+goleft+'').on('touchstart',function(){
+                    clearInterval(autorotate);
+                })
+            }
+            
             $('.'+thisName+'.'+goleft+'').on('touchstart.btnrotateleft',function(){
                 if(zoomon){
                     zoomOut();
@@ -908,6 +973,7 @@ $.fn.tsRotate = function( options ) {
                     doc.off('.btnrotateleft');
                 })
             })
+        }
     }
     
     
