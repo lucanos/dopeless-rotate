@@ -1,6 +1,6 @@
 /*!
  * Dopeless Rotate - jQuery Plugin
- * version: 1.0 (20/01/2013)
+ * version: 1.1.0 (12/03/2013)
  *
  * Documentation and license http://www.dopeless-design.de/dopeless-rotate-jquery-plugin-for-360-degree-product-view.html
  *
@@ -8,9 +8,13 @@
  */
 
 (function( $ ){
-    
-var is_touch_device = 'ontouchstart' in document.documentElement;
-    
+    var is_touch_device;
+    if (window.navigator.msMaxTouchPoints) {
+        is_touch_device = true;
+    }
+    else {
+        is_touch_device = false;
+    }
 $.fn.tsRotate = function( options ) {  
     var settings = $.extend( {
         'zoom' : true,
@@ -23,10 +27,12 @@ $.fn.tsRotate = function( options ) {
         'zoomfolder' : 'zoomimages',
         'pathtophp' : 'dopelessRotate/scripts/',
         'hotspots' : false,
-        'hotspotsTitle' : 'Highlights'
+        'hotspotsTitle' : 'Highlights',
+        'changeAxis' : false
     }, options);
     
     var zoomDiv = (settings.zoom) ? '<div class="zoom"></div>' : '';
+    var pointerDiv = (settings.changeAxis) ? '' : '<div class="round"><div class="pointer_object"></div><div class="pointer"></div></div>';
     var direction = (settings.reverse) ? -1 : 1;
     var addLogo = (settings.disablelogo) ? '' : '<a id="dopeless_rotate_logo" title="Dopeless Rotate Plugin Home" target="_blank" href="http://www.dopeless-design.de/dopeless-rotate-jquery-plugin-360-degrees-product-viewer.html">Dopeless Rotate</a>';
     var currentFrame = settings.startfrom;
@@ -36,6 +42,7 @@ $.fn.tsRotate = function( options ) {
     var nophp = settings.nophp;
     var hotspots = settings.hotspots;
     var highlightsHidden = true;
+    var changeAxis = settings.changeAxis;
     if(hotspots){
         var toti;     
     }
@@ -54,7 +61,7 @@ $.fn.tsRotate = function( options ) {
     $(this).wrap('<div class="ts_holder" id="holder_'+thisName+'"/>');
     var doc = $(document);
     var holder = $('#holder_'+thisName+'');
-    holder.html("<img class='ts_img_view' src='' /><img class='ts_imgzoom_view' src='' /><div class='round'><div class='pointer_object'></div><div class='pointer'></div></div>"+zoomDiv+"<div class='loading_bg'><div class='loading'><p>loading</p><div class='loading_bar'><div class='loading_bar_inside'></div></div></div></div><div class='zoomload_bg'><div class='zoomload_gif'></div></div></div>"+addLogo);
+    holder.html("<img class='ts_img_view' src='' /><img class='ts_imgzoom_view' src='' />"+pointerDiv+zoomDiv+"<div class='loading_bg'><div class='loading'><p>loading</p><div class='loading_bar'><div class='loading_bar_inside'></div></div></div></div><div class='zoomload_bg'><div class='zoomload_gif'></div></div></div>"+addLogo);
     var image = $(holder).find('.ts_img_view');
     var imagezoom = $(holder).find('.ts_imgzoom_view');
     var round = $(holder).find('.round');
@@ -87,6 +94,12 @@ $.fn.tsRotate = function( options ) {
     _css('.round',{'width':setRoundWidth, 'height':setRoundWidth});
     _css('.pointer',{'width':setPointerWidth, 'height':setPointerWidth, 'left':rotCenter, 'top':rotCenter*2});
     _css('.zoom',{'top':setRoundWidth+setRoundWidth/10+10, 'right':(setRoundWidth-30)/2-3});
+    if (changeAxis){
+        _css('.zoom',{'top':25, 'right':(setRoundWidth-30)/2-3});
+    }
+    else{
+        _css('.zoom',{'top':setRoundWidth+setRoundWidth/10+10, 'right':(setRoundWidth-30)/2-3});
+    }
     _css('.pointer_object',{'width':setPointerObjectWidth, 'height':setPointerObjectWidth, 'left':setPointerObjectOffset, 'top':setPointerObjectOffset});
     holder.find('.loading_bg').fadeIn();    
     
@@ -231,7 +244,7 @@ $.fn.tsRotate = function( options ) {
                 e.preventDefault(); 
             });
             
-            holder.on('touchend','.highlights_itemnot(.active)',function(){
+            holder.on('touchend','.highlights_item:not(.active)',function(){
                 holder.find('.highlights_item').removeClass('active');
                 $(this).addClass('active');
                 var itemid = parseInt($(this).attr('href'));
@@ -377,10 +390,16 @@ $.fn.tsRotate = function( options ) {
     
     function rotateImg(enterPosition){  
         doc.on('mousemove.dragrotate', function(e){
+            
             if(hotspots){
                 hideHighlights();
             }
-            var cursorPosition = e.pageX - contOffset.left;
+            if(changeAxis){
+                var cursorPosition = e.pageY - contOffset.top;
+            }
+            else{
+                var cursorPosition = e.pageX - contOffset.left;
+            }
             var xOffset = cursorPosition - enterPosition;
             var step = Math.round(contWidth/countFrames)*direction;
             var frameOffset = Math.round(xOffset/step);
@@ -393,7 +412,9 @@ $.fn.tsRotate = function( options ) {
                 currentFrame = countFrames*cycles + currentFrame;
             }
             image.attr('src', imagelist[currentFrame]);
-            setPointer();
+            if(!changeAxis){
+                setPointer();
+            }
         });
         doc.on('mouseup.dragrotate', function(){
             if(hotspots && highlightsHidden){
@@ -409,9 +430,13 @@ $.fn.tsRotate = function( options ) {
             if(hotspots){
                 hideHighlights();
             }
-            $(document).find('.highlights_item').css({'display':'none'});
             var event = window.event;
-            var cursorPosition = event.touches[0].pageX - contOffset.left;
+            if(changeAxis){
+                var cursorPosition = event.touches[0].pageY - contOffset.top;
+            }
+            else{
+                var cursorPosition = event.touches[0].pageX - contOffset.left;
+            }
             var xOffset = cursorPosition - enterPosition;
             var step = Math.round(contWidth/countFrames)*direction;
             var frameOffset = Math.round(xOffset/step);
@@ -424,7 +449,9 @@ $.fn.tsRotate = function( options ) {
                 currentFrame = countFrames*cycles + currentFrame;
             }
             image.attr('src', imagelist[currentFrame]);
-            setPointer();
+            if(!changeAxis){
+                setPointer();
+            }
         });
         holder.on('touchend.dragrotatemob', function(mobileEvent) {
             if(hotspots){
@@ -438,7 +465,9 @@ $.fn.tsRotate = function( options ) {
     
     function zoomImg(startXpos,startYpos,offset){
         zoomon = true;
-        hideHighlights();
+        if(hotspots){
+            hideHighlights();
+        }
         holder.find('.highlights').fadeOut();
         var zoomloading = true;
         holder.find('.round').fadeOut();
@@ -586,7 +615,9 @@ $.fn.tsRotate = function( options ) {
     
     function zoomImgMobile(offset){
         zoomon = true;
-        hideHighlights();
+        if(hotspots){
+            hideHighlights();
+        }
         holder.find('.highlights').fadeOut();
         $(document).find('.highlights_item').css({'display':'none'});
         var zoomloading = true;
@@ -677,8 +708,14 @@ $.fn.tsRotate = function( options ) {
     
     if(!is_touch_device){
         holder.on('mousedown.initrotate', function(e){
+            
             if(!zoomon){
-                var enterPosition = e.pageX - contOffset.left;
+                if(changeAxis){
+                    var enterPosition = e.pageY - contOffset.top;
+                }
+                else{
+                    var enterPosition = e.pageX - contOffset.left;
+                }
                 rotateImg(enterPosition);
             }
         });
@@ -693,11 +730,19 @@ $.fn.tsRotate = function( options ) {
     
     if(is_touch_device){
     
-        holder.on('touchstart.initrotatemob', function(mobileEvent){
+        holder.find(image).on('touchstart.initrotatemob', function(mobileEvent){
+            if(hotspots){
+                $(document).find('.highlights_item').css({'display':'none'});
+            }
             if(!zoomon){
                 mobileEvent.preventDefault();
                 var sevent = window.event;
-                var enterPosition = sevent.touches[0].pageX - contOffset.left;
+                if(changeAxis){
+                    var enterPosition = sevent.touches[0].pageY - contOffset.top;
+                }
+                else{
+                    var enterPosition = sevent.touches[0].pageX - contOffset.left;
+                }
                 rotateImgMobile(enterPosition);
             }
         });
