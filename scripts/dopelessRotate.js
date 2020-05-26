@@ -1,6 +1,6 @@
 /*!
  * Dopeless Rotate - jQuery Plugin
- * version: 0.7beta (21/05/2012)
+ * version: 0.8beta (12/07/2012)
  *
  * Documentation and license http://www.dopeless-design.de/dopeless-rotate-jquery-plugin-for-360-degree-product-view.html
  *
@@ -8,6 +8,9 @@
  */
 
 (function( $ ){
+	
+	var is_touch_device = 'ontouchstart' in document.documentElement;
+	
     $.fn.tsRotate = function( options ) {  
         var settings = $.extend( {
         	'zoom' : true,
@@ -129,8 +132,6 @@
 				thisFrame++;
 				image.attr('src', this);
 				cache.push(im);
-				
-				
 			});
 		}
 	preload(imagelist);
@@ -139,45 +140,78 @@
 	var zoom;
 	image.attr('src', imagelist[currentFrame]);
 	
-	holder.bind('mousedown.rotate', function(e){
-		if(!zoom){
-			var enterPosition = e.pageX - contOffset.left;			
-			doc.bind('mousemove.dragrotate', function(e){
-				var cursorPosition = e.pageX - contOffset.left;
-				
-				
-				var xOffset = cursorPosition - enterPosition;
-				var step = Math.round(contWidth/countFrames);
-				var frameOffset = Math.round(xOffset/step);
-				var cycles = Math.abs(Math.floor((frameOffset+startFrame)/countFrames));
-				currentFrame = startFrame + frameOffset;
-				if(currentFrame >= countFrames){
-					currentFrame = currentFrame - countFrames*cycles;
-				}		
-				if(currentFrame < 0){
-					currentFrame = countFrames*cycles + currentFrame;
-				}
-				image.attr('src', imagelist[currentFrame]);
-				var corner = Math.floor(360/countFrames);						
-				var degrees = corner*currentFrame;								
-				var radians=degrees*Math.PI/180;
-				var sine=Math.sin(radians);
-				var cose=Math.cos(radians);
-				var poinx = rotCenter+rotRadius*sine*-1;
-				var poiny = rotCenter+rotRadius*cose;
-				$(holder).find('.pointer').css({
-					'left':poinx,
-					'top':poiny
-				});
+	function rotateImg(enterPosition){	
+		doc.on('mousemove.dragrotate', function(e){
+			var cursorPosition = e.pageX - contOffset.left;
+			var xOffset = cursorPosition - enterPosition;
+			var step = Math.round(contWidth/countFrames);
+			var frameOffset = Math.round(xOffset/step);
+			var cycles = Math.abs(Math.floor((frameOffset+startFrame)/countFrames));
+			currentFrame = startFrame + frameOffset;
+			if(currentFrame >= countFrames){
+				currentFrame = currentFrame - countFrames*cycles;
+			}		
+			if(currentFrame < 0){
+				currentFrame = countFrames*cycles + currentFrame;
+			}
+			image.attr('src', imagelist[currentFrame]);
+			var corner = Math.floor(360/countFrames);						
+			var degrees = corner*currentFrame;								
+			var radians=degrees*Math.PI/180;
+			var sine=Math.sin(radians);
+			var cose=Math.cos(radians);
+			var poinx = rotCenter+rotRadius*sine*-1;
+			var poiny = rotCenter+rotRadius*cose;
+			$(holder).find('.pointer').css({
+				'left':poinx,
+				'top':poiny
 			});
-			doc.bind('mouseup.dragrotate', function(){
-				startFrame = currentFrame;
-				doc.unbind('.dragrotate');
-			});
-		}
-	});
+		});
+		doc.on('mouseup.dragrotate', function(){
+			startFrame = currentFrame;
+			doc.off('.dragrotate');
+		});
+	}
+	
+	function rotateImgMobile(enterPosition){	
+		holder.on('touchmove.dragrotatemob', function(mobileEvent) {
+			var event = window.event;
+			var cursorPosition = event.touches[0].pageX - contOffset.left;
 			
-	$(holder).find('.zoom').bind('click.zoom', function(e){
+			
+			var xOffset = cursorPosition - enterPosition;
+			var step = Math.round(contWidth/countFrames);
+			var frameOffset = Math.round(xOffset/step);
+			var cycles = Math.abs(Math.floor((frameOffset+startFrame)/countFrames));
+			currentFrame = startFrame + frameOffset;
+			if(currentFrame >= countFrames){
+				currentFrame = currentFrame - countFrames*cycles;
+			}		
+			if(currentFrame < 0){
+				currentFrame = countFrames*cycles + currentFrame;
+			}
+			image.attr('src', imagelist[currentFrame]);
+			var corner = Math.floor(360/countFrames);						
+			var degrees = corner*currentFrame;								
+			var radians=degrees*Math.PI/180;
+			var sine=Math.sin(radians);
+			var cose=Math.cos(radians);
+			var poinx = rotCenter+rotRadius*sine*-1;
+			var poiny = rotCenter+rotRadius*cose;
+			$(holder).find('.pointer').css({
+				'left':poinx,
+				'top':poiny
+			});
+			
+  		});
+  		holder.on('touchend.dragrotate', function(mobileEvent) {
+  			startFrame = currentFrame;
+			holder.off('.dragrotatemob');
+  		});
+  		
+	}
+	
+	function zoomImg(startXpos,startYpos,offset){
 		zoom = true;
 		var zoomloading = true;
 		$(holder).find('.round').fadeOut();
@@ -193,7 +227,6 @@
 		zoomImg.onload = function() {
 			zoomHeight = zoomImg.height;
 			zoomWidth = zoomImg.width;
-			var offset = holder.offset();
 			var leftOverflow = (zoomWidth - contWidth)/-2;
 			var topOverflow = (zoomHeight - contHeight)/-2;
 			imagezoom.attr('src', zoomlist[currentFrame]);
@@ -222,10 +255,9 @@
 			$(holder).find('.zoomload_bg').fadeOut();
 			holder.addClass('zoomout');
 			var zoomloading = false;
-            var startXpos = e.pageX - offset.left;
-			var startYpos = e.pageY - offset.top;
+            
 			
-			holder.bind('mousemove.dragpan', (function(e){
+			holder.on('mousemove.dragpan', (function(e){
 				var currentXpos = e.pageX - offset.left;
 				var currentYpos = e.pageY - offset.top;
 				var xlimit = (zoomWidth-contWidth)*-1;
@@ -263,10 +295,10 @@
 					imagezoom.css('top', topOffset);
 				}
 			}));
-			holder.bind('mousedown.zoomof', (function(){
+			holder.on('mousedown.zoomof', (function(){
 				if(!zoomloading){
-					holder.unbind('mousemove.dragpan');
-					holder.unbind('mousedown.zoomof');
+					holder.off('.dragpan');
+					holder.off('mousedown.zoomof');
 					image.attr('src', imagelist[currentFrame]);
 					image.css({
 						'left':0,
@@ -289,7 +321,184 @@
 				}
 			}));
 		};	
-	});
+	}
+	
+	
+	function zoomMoveMobile(startXpos,startYpos,offset,leftOverflow,topOverflow){
+		var sieventm = window.event;
+		var currentXpos = sieventm.touches[0].pageX - offset.left;
+		var currentYpos = sieventm.touches[0].pageY - offset.top;	
+		var xlimit = (zoomWidth-contWidth)*-1;
+		var ylimit = (zoomHeight-contHeight)*-1;
+		var xSpeedCoeff = Math.floor(zoomWidth/contWidth);
+		var ySpeedCoeff = Math.floor(zoomHeight/contHeight);
+		var moveLeft = startXpos - currentXpos - 20;
+		var moveTop = startYpos - currentYpos - 20;
+		var leftOffset = leftOverflow + moveLeft*xSpeedCoeff*-1;
+		var topOffset = topOverflow + moveTop*ySpeedCoeff*-1;
+			if(leftOffset >= 0){
+				leftOffset = 0;
+			}
+			if(leftOffset <= xlimit){
+				leftOffset = xlimit;
+			}
+			if(topOffset >= 0){
+				topOffset = 0;
+			}
+			if(topOffset <= ylimit){
+				topOffset = ylimit;
+			}
+			imagezoom.css('left', leftOffset);
+			imagezoom.css('top', topOffset);
+			$('#ttest').html(topOverflow);
+		holder.on('touchend.zoomendmob',(function(){
+			holder.off('.dragstartmob');
+					leftOverflow = leftOffset;
+					topOverflow = topOffset;
+				}));
+	}
+	
+	function zoomImgMobile(offset){
+		zoom = true;
+		var zoomloading = true;
+		$(holder).find('.round').fadeOut();
+		$(holder).find('.zoom').fadeOut();  
+		
+		var zoomImg = new Image();
+		zoomImg.src = zoomlist[currentFrame];
+		if (zoomImg.complete || zoomImg.readystate === 4) {
+		}
+		else {
+			$(holder).find('.zoomload_bg').fadeIn();
+		}
+		zoomImg.onload = function() {
+			zoomHeight = zoomImg.height;
+			zoomWidth = zoomImg.width;
+			if(!leftOverflow){
+			var leftOverflow = (zoomWidth - contWidth)/-2;
+			}
+			if(!topOverflow){
+			var topOverflow = (zoomHeight - contHeight)/-2;
+			}
+			imagezoom.attr('src', zoomlist[currentFrame]);
+			imagezoom.css({
+				'left':leftOverflow,
+				'top':topOverflow
+			});
+			
+			image.animate({
+				width: zoomWidth,
+				height: zoomHeight,
+				left:leftOverflow,
+				top:topOverflow
+				}, 100, 'linear', function() {
+					imagezoom.animate({
+					width: zoomWidth,
+					height: zoomHeight,
+						left:leftOverflow,
+						top:topOverflow
+						}, 100, 'linear', function() {
+							imagezoom.fadeIn(100);
+						});
+					});
+			
+			
+			$(holder).find('.zoomload_bg').fadeOut();
+			holder.addClass('zoomout');
+			var zoomloading = false;
+            
+			holder.on('touchstart.dragstartmob',(function(){
+				var seventm = window.event;
+		        var startXpos = seventm.touches[0].pageX - offset.left;
+				var startYpos = seventm.touches[0].pageY - offset.top;
+					holder.bind('touchmove.mobdragpan', (function(e){
+						e.preventDefault();
+						zoomMoveMobile(startXpos,startYpos,offset,leftOverflow,topOverflow);
+					}));
+				
+			}));
+			
+			holder.on('click.zoomofmob', (function(){
+				if(!zoomloading){
+					holder.off('.zoomendmob');
+					image.attr('src', imagelist[currentFrame]);
+					image.css({
+						'left':0,
+						'top':0,
+						'width':contWidth,
+						'height':contHeight
+					});
+					imagezoom.animate({
+						width: contWidth,
+						height: contHeight,
+						left:0,
+						top:0
+						}, 100, 'linear', function() {
+							imagezoom.fadeOut(100);
+							});
+					$(holder).find('.round').fadeIn();
+					$(holder).find('.zoom').fadeIn();			
+					holder.removeClass('zoomout');
+					zoom = false;
+				}
+			}));
+		};	
+	}
+	
+		if(!is_touch_device){
+			holder.on('mousedown.initrotate', function(e){
+				if(!zoom){
+					var enterPosition = e.pageX - contOffset.left;
+					rotateImg(enterPosition);
+				}
+			});
+			
+			$(holder).find('.zoom').on('click.initzoom', function(e){
+				var offset = holder.offset();
+				var startXpos = e.pageX - offset.left;
+				var startYpos = e.pageY - offset.top;
+				zoomImg(startXpos,startYpos,offset);
+			});
+		}
+		
+		if(is_touch_device){
+		
+			holder.on('touchstart.initrotatemob', function(mobileEvent){
+				if(!zoom){
+					mobileEvent.preventDefault();
+					var sevent = window.event;
+					var enterPosition = sevent.touches[0].pageX - contOffset.left;
+					rotateImgMobile(enterPosition);
+				}
+			});
+		
+			$(holder).find('.zoom').on('touchstart.initzoommob', function(mobileEvent){
+				mobileEvent.preventDefault();
+				var offset = holder.offset();		
+				
+				zoomImgMobile(offset);	
+			});	
+		}
 	});
 };
 })( jQuery );
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
