@@ -87,6 +87,7 @@
 	display:none;
 }
 .zoom{
+	z-index:10;
 	position:absolute;
 	background-image:url(zoomin.png);
 	background-position:0 0;
@@ -143,4 +144,16 @@
 	background-image:url(ajax-loader.gif);
 	background-position:0 0;
 	background-repeat:no-repeat;
+}
+#dopeless_rotate_logo{
+	z-index:10;
+	position:absolute;
+	bottom:5px;
+	left:5px;
+	font-family: 'Terminal Dosis', sans-serif;
+	font-size:10px;
+	color:#777;
+}
+#dopeless_rotate_logo:hover{
+	color:#000;
 }
